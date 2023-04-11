@@ -1,6 +1,8 @@
 package com.api.saofranciscoinn.controllers;
 import com.api.saofranciscoinn.dtos.RoomDto;
+import com.api.saofranciscoinn.models.booking.BookingModel;
 import com.api.saofranciscoinn.models.room.RoomModel;
+import com.api.saofranciscoinn.services.BookingService;
 import com.api.saofranciscoinn.services.RoomService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -15,15 +17,16 @@ import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = "*")
-@RequestMapping("/room")
+@RequestMapping("room")
 public class RoomController {
 
     final RoomService roomService;
+    final BookingService bookingService;
 
-    public RoomController(RoomService roomService) {
+    public RoomController(RoomService roomService, BookingService bookingService) {
         this.roomService = roomService;
+        this.bookingService = bookingService;
     }
-
     @PostMapping(value = "/save")
     public ResponseEntity<Object> saveRoom(@Valid @RequestBody RoomDto roomDto){
         var roomModel= new RoomModel();
@@ -53,8 +56,13 @@ public class RoomController {
         if(roomModelOptional.isEmpty()){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente não encontrado!");
         }
-        //verificar quarto esta em uma reserva
-        else
+        List<BookingModel> bookings = bookingService.findAll().
+                stream().
+                filter(booking -> booking.getRoom().getId().equals(roomModelOptional.get().getId())).
+                toList();
+        if(!bookings.isEmpty()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Não é possível deletar um quarto que possui reservas!");
+        }
            roomService.delete(roomModelOptional.get());
         return ResponseEntity.status(HttpStatus.OK).body("Cliente deletado com sucesso!");
 
