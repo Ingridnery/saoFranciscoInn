@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
-@RequestMapping("aluguel")
+@RequestMapping("booking")
 public class BookingController {
     final BookingService bookingService;
     final ClientService clientService;
