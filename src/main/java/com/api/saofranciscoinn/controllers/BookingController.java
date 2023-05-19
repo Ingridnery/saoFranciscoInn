@@ -44,19 +44,30 @@ public class BookingController {
                         booking.getStartingDate().isAfter(bookingDto.getFinalDate()))
                 .toList();
         if(bookings.isEmpty()){
-            var bookingModel = new BookingModel();
-            Optional<ClientModel> clientModel = clientService.findById(bookingDto.getIdClient());
-
-            bookingModel.setClient(clientModel.get());
-            bookingModel.setRoom(roomModel.get());
-
-            bookingModel.setFinalDate(bookingDto.getFinalDate());
-            bookingModel.setStartingDate(bookingDto.getStartingDate());
-            return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.save(bookingModel));
+            return getObjectResponseEntity(bookingDto, roomModel);
         }
         else{
+            List<BookingModel> bookingsAux = bookings.stream()
+                    .filter(booking -> booking.getFinalDate().isAfter(bookingDto.getStartingDate()))
+                    .toList();
+            if(bookingsAux.isEmpty()){
+                return getObjectResponseEntity(bookingDto, roomModel);
+            }
+
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Esse quarto já está alugado nessa data!");
         }
+    }
+
+    private ResponseEntity<Object> getObjectResponseEntity(@RequestBody @Valid BookingDto bookingDto, Optional<RoomModel> roomModel) {
+        var bookingModel = new BookingModel();
+        Optional<ClientModel> clientModel = clientService.findById(bookingDto.getIdClient());
+
+        bookingModel.setClient(clientModel.get());
+        bookingModel.setRoom(roomModel.get());
+
+        bookingModel.setFinalDate(bookingDto.getFinalDate());
+        bookingModel.setStartingDate(bookingDto.getStartingDate());
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.save(bookingModel));
     }
 
     @PutMapping(value = "/update/{id}")
